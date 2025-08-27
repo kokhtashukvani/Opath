@@ -14,7 +14,12 @@ class PurchaseRequestController {
 
     // Show form to create a new purchase request
     public function create() {
-        $this->loadView('purchase_requests/create');
+        require_once APP_ROOT . '/src/lib/FormRenderer.php';
+        $renderer = new FormRenderer();
+        $formHtml = $renderer->render('Purchase Request', 'index.php?action=purchase_request_store');
+
+        $data = ['form_html' => $formHtml];
+        $this->loadView('purchase_requests/create', $data);
     }
 
     // Store a new purchase request

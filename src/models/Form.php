@@ -21,6 +21,13 @@ class Form {
         return $this->db->single();
     }
 
+    // Get form by name
+    public function findByName($name) {
+        $this->db->query('SELECT * FROM forms WHERE name = :name');
+        $this->db->bind(':name', $name);
+        return $this->db->single();
+    }
+
     // Add a new form
     public function create($data) {
         $this->db->query('INSERT INTO forms (name, description) VALUES (:name, :description)');
