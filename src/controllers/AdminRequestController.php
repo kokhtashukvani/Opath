@@ -1,85 +1,62 @@
 <?php
 require_once APP_ROOT . '/src/models/PurchaseRequest.php';
 require_once APP_ROOT . '/src/models/Supplier.php';
+require_once APP_ROOT . '/src/models/Inquiry.php';
+require_once APP_ROOT . '/src/lib/ApiResponse.php';
 
 class AdminRequestController {
     private $requestModel;
     private $supplierModel;
+    private $inquiryModel;
 
     public function __construct() {
-        // Ensure user is an admin to access this controller
         if (!isAdmin()) {
-            die('<h1>Access Denied</h1><p>You do not have permission to view this page.</p>');
+            ApiResponse::json(['error' => 'Unauthorized'], 403);
         }
         $this->requestModel = new PurchaseRequest();
         $this->supplierModel = new Supplier();
+        $this->inquiryModel = new Inquiry();
     }
 
-    // Show all purchase requests from all users
+    // GET /admin/requests
     public function index() {
         $requests = $this->requestModel->getAll();
-        $data = ['requests' => $requests];
-        $this->loadView('admin/requests/index', $data);
+        ApiResponse::json($requests);
     }
 
-    // Show the form to create a new inquiry for a purchase request
-    public function createInquiry() {
+    // GET /admin/requests/inquiry-data?request_id={id}
+    // Gets the data needed for the "create inquiry" page
+    public function getInquiryData() {
         $request_id = isset($_GET['request_id']) ? $_GET['request_id'] : null;
         if (!$request_id) {
-            die('No purchase request specified.');
+            ApiResponse::json(['error' => 'Purchase request ID not specified'], 400);
         }
-
-        $request = $this->requestModel->findById($request_id); // I need to add this method to the model
+        $request = $this->requestModel->findById($request_id);
         $suppliers = $this->supplierModel->getAll();
 
-        $data = [
-            'request' => $request,
-            'suppliers' => $suppliers
-        ];
-
-        $this->loadView('admin/inquiries/create', $data);
+        ApiResponse::json(['request' => $request, 'suppliers' => $suppliers]);
     }
 
-    // Handle the submission of the inquiry form
+    // POST /admin/inquiries
     public function sendInquiry() {
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $request_id = $_POST['request_id'];
-            $supplier_ids = isset($_POST['suppliers']) ? $_POST['suppliers'] : [];
-            $deadline = $_POST['deadline'];
+        $postData = json_decode(file_get_contents('php://input'), true);
+        $request_id = $postData['request_id'] ?? null;
+        $supplier_ids = $postData['suppliers'] ?? [];
+        $deadline = $postData['deadline'] ?? null;
 
-            if (empty($supplier_ids)) {
-                die('No suppliers were selected.');
-            }
-
-            require_once APP_ROOT . '/src/models/Inquiry.php';
-            $inquiryModel = new Inquiry();
-
-            foreach ($supplier_ids as $supplier_id) {
-                $data = [
-                    'request_id' => $request_id,
-                    'supplier_id' => $supplier_id,
-                    'deadline' => $deadline
-                ];
-                $inquiryModel->create($data);
-            }
-
-            // Redirect back to the admin request list with a success message
-            header('Location: index.php?page=admin_requests&inquiry_sent=true');
-            exit();
-
-        } else {
-            header('Location: index.php?page=admin_requests');
-            exit();
+        if (!$request_id || empty($supplier_ids) || !$deadline) {
+            ApiResponse::json(['error' => 'Request ID, suppliers, and deadline are required.'], 400);
         }
-    }
 
-    // Helper to load view files
-    public function loadView($view, $data = []) {
-        $view_path = APP_ROOT . '/views/' . $view . '.php';
-        if (file_exists($view_path)) {
-            require_once $view_path;
-        } else {
-            die('View does not exist: ' . $view);
+        foreach ($supplier_ids as $supplier_id) {
+            $data = [
+                'request_id' => $request_id,
+                'supplier_id' => $supplier_id,
+                'deadline' => $deadline
+            ];
+            $this->inquiryModel->create($data);
         }
+
+        ApiResponse::json(['success' => true, 'message' => 'Inquiries sent successfully.'], 201);
     }
 }

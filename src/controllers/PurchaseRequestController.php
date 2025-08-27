@@ -1,56 +1,43 @@
 <?php
-require_once APP_ROOT . '/src/models/PurchaseRequest.php';
+require_once APP_ROOT . '/src/lib/ApiResponse.php';
+require_once APP_ROOT . '/src/lib/FormSubmissionHandler.php';
+require_once APP_ROOT . '/src/models/Form.php';
+require_once APP_ROOT . '/src/models/FormField.php';
 
 class PurchaseRequestController {
-    private $requestModel;
 
     public function __construct() {
         if (!isLoggedIn()) {
-            header('Location: index.php?page=login');
-            exit();
+            ApiResponse::json(['error' => 'Unauthorized'], 401);
         }
-        $this->requestModel = new PurchaseRequest();
     }
 
-    // Show form to create a new purchase request
-    public function create() {
-        require_once APP_ROOT . '/src/lib/FormRenderer.php';
-        $renderer = new FormRenderer();
-        $formHtml = $renderer->render('Purchase Request', 'index.php?action=purchase_request_store');
+    // GET /forms/purchase-request - Gets the structure of the form
+    public function getFormStructure() {
+        $formModel = new Form();
+        $formFieldModel = new FormField();
 
-        $data = ['form_html' => $formHtml];
-        $this->loadView('purchase_requests/create', $data);
+        $form = $formModel->findByName('Purchase Request');
+        if (!$form) {
+            ApiResponse::json(['error' => 'Purchase Request form definition not found.'], 404);
+        }
+
+        $fields = $formFieldModel->getFieldsByFormId($form->id);
+        ApiResponse::json(['form' => $form, 'fields' => $fields]);
     }
 
-    // Store a new purchase request
+    // POST /purchase-requests
     public function store() {
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            require_once APP_ROOT . '/src/lib/FormSubmissionHandler.php';
-            $handler = new FormSubmissionHandler();
+        $handler = new FormSubmissionHandler();
+        $postData = json_decode(file_get_contents('php://input'), true);
 
-            // Sanitize POST data first
-            $sanitizedPost = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+        // Handle the generic submission.
+        $result = $handler->handle('Purchase Request', $postData);
 
-            // Handle the generic submission. This now the single source of truth.
-            $result = $handler->handle('Purchase Request', $sanitizedPost);
-
-            if ($result['success']) {
-                // Redirect on success
-                header('Location: index.php?page=dashboard&pr_success=true');
-            } else {
-                // If the generic handler fails, show the error
-                die($result['message']);
-            }
-        }
-    }
-
-    // Helper to load view files
-    public function loadView($view, $data = []) {
-        $view_path = APP_ROOT . '/views/' . $view . '.php';
-        if (file_exists($view_path)) {
-            require_once $view_path;
+        if ($result['success']) {
+            ApiResponse::json(['success' => true, 'message' => 'Purchase request submitted successfully.'], 201);
         } else {
-            die('View does not exist: ' . $view);
+            ApiResponse::json(['error' => $result['message']], 400);
         }
     }
 }
