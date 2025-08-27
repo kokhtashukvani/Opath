@@ -54,45 +54,57 @@ if ($action) {
             $prController->store();
             break;
 
+        // Inquiry Actions
+        case 'send_inquiry':
+            $controller = new AdminRequestController();
+            $controller->sendInquiry();
+            break;
+
         default:
             header('Location: index.php');
             exit;
     }
 } else {
     // Page Views
-    $supplierController = new SupplierController();
-    $prController = new PurchaseRequestController();
-    $dashboardController = new DashboardController();
-
     // Whitelist of allowed pages
-    $allowed_pages = ['home', 'login', 'register', 'dashboard', 'suppliers', 'supplier_create', 'supplier_edit', 'purchase_request_create'];
+    $allowed_pages = ['home', 'login', 'register', 'dashboard', 'suppliers', 'supplier_create', 'supplier_edit', 'purchase_request_create', 'admin_requests', 'inquiry_create'];
 
     if (in_array($page, $allowed_pages)) {
-        // Protect pages
-        if (($page == 'dashboard' || strpos($page, 'supplier') === 0 || strpos($page, 'purchase_request') === 0) && !isLoggedIn()) {
+        // Protect pages that require a login
+        $protected_pages = ['dashboard', 'suppliers', 'supplier_create', 'supplier_edit', 'purchase_request_create', 'admin_requests', 'inquiry_create'];
+        if (in_array($page, $protected_pages) && !isLoggedIn()) {
             header('Location: index.php?page=login');
             exit();
         }
 
-        // Route to controller or simple view
+        // Route to the appropriate controller
         switch($page) {
             case 'dashboard':
-                $dashboardController->index();
+                $controller = new DashboardController();
+                $controller->index();
                 break;
             case 'suppliers':
-                $supplierController->index();
-                break;
             case 'supplier_create':
-                $supplierController->create();
-                break;
             case 'supplier_edit':
-                $supplierController->edit();
+                $controller = new SupplierController();
+                $method = str_replace('supplier_', '', $page);
+                if ($method == 'suppliers') $method = 'index';
+                $controller->$method();
+                break;
+            case 'admin_requests':
+                $controller = new AdminRequestController();
+                $controller->index();
+                break;
+            case 'inquiry_create':
+                $controller = new AdminRequestController();
+                $controller->createInquiry();
                 break;
             case 'purchase_request_create':
-                $prController->create();
+                $controller = new PurchaseRequestController();
+                $controller->create();
                 break;
             default:
-                // Default to loading a simple view from the /views folder
+                // Default to loading a simple view from the /views folder (home, login, register)
                 $view_path = APP_ROOT . '/views/' . $page . '.php';
                 if (file_exists($view_path)) {
                     require_once $view_path;
@@ -107,27 +119,4 @@ if ($action) {
         $view_path = APP_ROOT . '/views/home.php';
         require_once $view_path;
     }
-}
-
-
-// Check if the view file exists and load it
-/*
-if (file_exists($view_path)) {
-    require_once $view_path;
-} else {
-    // A simple 404 handler
-    http_response_code(404);
-    echo "<h1>404 Not Found</h1>";
-    echo "<p>The page you requested could not be found.</p>";
-}
-*/
-
-// Check if the view file exists and load it
-if (file_exists($view_path)) {
-    require_once $view_path;
-} else {
-    // A simple 404 handler
-    http_response_code(404);
-    echo "<h1>404 Not Found</h1>";
-    echo "<p>The page you requested could not be found.</p>";
 }

@@ -30,6 +30,13 @@ class PurchaseRequest {
         return $this->db->resultSet();
     }
 
+    // Get a single purchase request by its ID
+    public function findById($id) {
+        $this->db->query('SELECT * FROM purchase_requests WHERE id = :id');
+        $this->db->bind(':id', $id);
+        return $this->db->single();
+    }
+
     // Get all purchase requests (for admins)
     public function getAll() {
         $this->db->query('SELECT pr.*, u.full_name as user_name FROM purchase_requests pr JOIN users u ON pr.user_id = u.id ORDER BY pr.created_at DESC');
