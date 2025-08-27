@@ -59,11 +59,11 @@
             <?php else: ?>
                 <?php foreach($data['purchase_requests'] as $request): ?>
                     <tr>
-                        <td><?php echo htmlspecialchars($request->product_name); ?></td>
-                        <td><?php echo htmlspecialchars($request->brand); ?></td>
-                        <td><?php echo htmlspecialchars($request->quantity); ?></td>
-                        <td><span class="badge bg-secondary"><?php echo htmlspecialchars($request->status); ?></span></td>
-                        <td><?php echo date('Y-m-d', strtotime($request->created_at)); ?></td>
+                        <td><?php echo htmlspecialchars($request['product_name'] ?? 'N/A'); ?></td>
+                        <td><?php echo htmlspecialchars($request['brand'] ?? 'N/A'); ?></td>
+                        <td><?php echo htmlspecialchars($request['quantity'] ?? 'N/A'); ?></td>
+                        <td><span class="badge bg-secondary">Pending</span></td>
+                        <td><?php echo date('Y-m-d', strtotime($request['submitted_at'])); ?></td>
                     </tr>
                 <?php endforeach; ?>
             <?php endif; ?>

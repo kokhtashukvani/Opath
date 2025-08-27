@@ -25,24 +25,21 @@ class PurchaseRequestController {
     // Store a new purchase request
     public function store() {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
-            $data = [
-                'user_id' => $_SESSION['user_id'],
-                'product_name' => trim($_POST['product_name']),
-                'product_description' => trim($_POST['product_description']),
-                'brand' => trim($_POST['brand']),
-                'quantity' => trim($_POST['quantity']),
-            ];
+            require_once APP_ROOT . '/src/lib/FormSubmissionHandler.php';
+            $handler = new FormSubmissionHandler();
 
-            // Basic validation
-            if (!empty($data['product_name']) && !empty($data['quantity'])) {
-                if ($this->requestModel->create($data)) {
-                    header('Location: index.php?page=dashboard&pr_success=true');
-                } else {
-                    die('Something went wrong while creating the request.');
-                }
+            // Sanitize POST data first
+            $sanitizedPost = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+
+            // Handle the generic submission. This now the single source of truth.
+            $result = $handler->handle('Purchase Request', $sanitizedPost);
+
+            if ($result['success']) {
+                // Redirect on success
+                header('Location: index.php?page=dashboard&pr_success=true');
             } else {
-                die('Please fill out all required fields.');
+                // If the generic handler fails, show the error
+                die($result['message']);
             }
         }
     }

@@ -1,20 +1,20 @@
 <?php
-require_once APP_ROOT . '/src/models/PurchaseRequest.php';
+require_once APP_ROOT . '/src/models/FormSubmission.php';
 
 class DashboardController {
-    private $requestModel;
+    private $submissionModel;
 
     public function __construct() {
         if (!isLoggedIn()) {
             header('Location: index.php?page=login');
             exit();
         }
-        $this->requestModel = new PurchaseRequest();
+        $this->submissionModel = new FormSubmission();
     }
 
     public function index() {
-        // Fetch purchase requests for the logged-in user
-        $requests = $this->requestModel->getByUserId($_SESSION['user_id']);
+        // Fetch purchase request submissions for the logged-in user
+        $requests = $this->submissionModel->getSubmissionsByFormNameAndUser('Purchase Request', $_SESSION['user_id']);
 
         $data = [
             'purchase_requests' => $requests
