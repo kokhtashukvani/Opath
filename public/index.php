@@ -60,6 +60,16 @@ if ($action) {
             $controller->sendInquiry();
             break;
 
+        // Form Builder Actions
+        case 'form_store':
+            $controller = new FormBuilderController();
+            $controller->store();
+            break;
+        case 'form_field_store':
+            $controller = new FormBuilderController();
+            $controller->storeField();
+            break;
+
         default:
             header('Location: index.php');
             exit;
@@ -67,11 +77,11 @@ if ($action) {
 } else {
     // Page Views
     // Whitelist of allowed pages
-    $allowed_pages = ['home', 'login', 'register', 'dashboard', 'suppliers', 'supplier_create', 'supplier_edit', 'purchase_request_create', 'admin_requests', 'inquiry_create'];
+    $allowed_pages = ['home', 'login', 'register', 'dashboard', 'suppliers', 'supplier_create', 'supplier_edit', 'purchase_request_create', 'admin_requests', 'inquiry_create', 'forms', 'forms_create', 'forms_show'];
 
     if (in_array($page, $allowed_pages)) {
         // Protect pages that require a login
-        $protected_pages = ['dashboard', 'suppliers', 'supplier_create', 'supplier_edit', 'purchase_request_create', 'admin_requests', 'inquiry_create'];
+        $protected_pages = ['dashboard', 'suppliers', 'supplier_create', 'supplier_edit', 'purchase_request_create', 'admin_requests', 'inquiry_create', 'forms', 'forms_create', 'forms_show'];
         if (in_array($page, $protected_pages) && !isLoggedIn()) {
             header('Location: index.php?page=login');
             exit();
@@ -102,6 +112,14 @@ if ($action) {
             case 'purchase_request_create':
                 $controller = new PurchaseRequestController();
                 $controller->create();
+                break;
+            case 'forms':
+            case 'forms_create':
+            case 'forms_show':
+                $controller = new FormBuilderController();
+                $method = str_replace('forms_', '', $page);
+                if ($method == 'forms') $method = 'index';
+                $controller->$method();
                 break;
             default:
                 // Default to loading a simple view from the /views folder (home, login, register)

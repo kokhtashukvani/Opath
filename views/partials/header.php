@@ -37,6 +37,11 @@
                                 <span class="nav-link-title">مدیریت تأمین‌کنندگان</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.php?page=forms">
+                                <span class="nav-link-title">Form Builder</span>
+                            </a>
+                        </li>
                         <?php endif; ?>
                         <li class="nav-item">
                             <a class="nav-link" href="index.php?page=purchase_request_create">
